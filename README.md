@@ -15,7 +15,7 @@ Here's an example which uses the `-insecure` option as we haven't set up a TLS
 certificate for the controller.
 ```
 ./unifi-exporter \
-    -address 192.168.1.10:8443 \
+    -address https://192.168.1.10:8443 \
     -user unifi-exporter \
     -password secret \
     -insecure \
@@ -25,7 +25,7 @@ certificate for the controller.
 ### Running in Docker
 ```
 docker run -it -p 8080:8080 j18e/unifi-exporter:latest \
-    -address 192.168.1.10:8443 \
+    -address https://192.168.1.10:8443 \
     -user unifi-exporter \
     -password secret \
     -insecure \

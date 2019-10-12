@@ -54,6 +54,11 @@ func main() {
 		},
 	}
 
+	if err := cli.authenticate(); err != nil {
+		log.Fatalf("connecting to Unifi controller: %v", err)
+	}
+	log.Infof("connected to Unifi controller at %s", cli.address)
+
 	col := newCollector(cli, networks)
 	prometheus.MustRegister(col)
 

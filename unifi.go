@@ -55,7 +55,7 @@ func (c *Client) getStations() ([]*Station, error) {
 }
 
 func (c *Client) authenticate() error {
-	url := fmt.Sprintf("https://%s/api/login", c.address)
+	url := c.address + "/api/login"
 
 	auth := map[string]string{
 		"username": c.user,
