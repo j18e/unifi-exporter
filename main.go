@@ -70,6 +70,13 @@ func main() {
 }
 
 func newCollector(cli *Client, nets []string) *Collector {
+	stnLabels := []string{
+		"mac",
+		"hostname",
+		"network",
+		"manufacturer",
+		"wired",
+	}
 	return &Collector{
 		upMetric: prometheus.NewDesc(
 			"unifi_controller_up",
@@ -79,25 +86,13 @@ func newCollector(cli *Client, nets []string) *Collector {
 		stnUptimeMetric: prometheus.NewDesc(
 			"unifi_station_uptime_seconds",
 			"uptime of device connected to Unifi controller's network",
-			[]string{
-				"mac",
-				"hostname",
-				"network",
-				"manufacturer",
-				"wired",
-			},
+			stnLabels,
 			nil,
 		),
 		stnLastSeenMetric: prometheus.NewDesc(
 			"unifi_station_last_seen",
 			"unix time when a device was last seen by the Unifi controller",
-			[]string{
-				"mac",
-				"hostname",
-				"network",
-				"manufacturer",
-				"wired",
-			},
+			stnLabels,
 			nil,
 		),
 		cli:      cli,
