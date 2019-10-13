@@ -76,6 +76,7 @@ func newCollector(cli *Client, nets []string) *Collector {
 		"network",
 		"manufacturer",
 		"wired",
+		"ip",
 	}
 	return &Collector{
 		upMetric: prometheus.NewDesc(
@@ -141,6 +142,7 @@ func (c Collector) Collect(ch chan<- prometheus.Metric) {
 			s.Network,
 			s.Manufacturer,
 			strconv.FormatBool(s.Wired),
+			s.IP,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			c.stnLastSeenMetric,
@@ -151,6 +153,7 @@ func (c Collector) Collect(ch chan<- prometheus.Metric) {
 			s.Network,
 			s.Manufacturer,
 			strconv.FormatBool(s.Wired),
+			s.IP,
 		)
 	}
 }

@@ -18,6 +18,7 @@ type Client struct {
 
 type Station struct {
 	MAC          string `json:"mac"`
+	IP           string `json:"ip"`
 	Hostname     string `json:"hostname"`
 	Uptime       int    `json:"uptime"`
 	Network      string `json:"network"`
