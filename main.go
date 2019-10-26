@@ -1,14 +1,12 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
 	"net/http"
-	"net/http/cookiejar"
 	"strconv"
 	"strings"
-	"time"
 
+	"github.com/j18e/unifi-exporter/unifi"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -16,15 +14,16 @@ import (
 )
 
 func main() {
+	// define, parse flags
 	addr := flag.String("address", "", "Unifi controller's address")
 	user := flag.String("user", "", "User to connect as")
 	password := flag.String("password", "", "Given user's password")
 	insecure := flag.Bool("insecure", false, "whether to accept invalid TLS certificates")
-	listenAddr := flag.String("listen", ":8080", "local address on which to listen for connections")
+	listenAddr := flag.String("listen", "0.0.0.0:8080", "local address on which to listen for connections")
 	watchNets := flag.String("watch.networks", "", "comma separated list of Unifi networks to watch")
-
 	flag.Parse()
 
+	// check flags
 	if *addr == "" {
 		log.Fatal("required flag -address")
 	} else if *user == "" {
@@ -35,41 +34,25 @@ func main() {
 		log.Fatal("required flag -watch.networks")
 	}
 
-	networks := strings.Split(*watchNets, ",")
-
-	// cookie jar carries auth tokens
-	jar, err := cookiejar.New(nil)
+	// connect to unifi controller
+	log.Infof("connecting to Unifi controller at %s with insecure=%t", *addr, *insecure)
+	cli, err := unifi.NewClient(*addr, *user, *password, *insecure)
 	if err != nil {
-		log.Fatalf("creating cookie jar: %w", err)
+		log.Fatalf("creating unifi client: %v", err)
 	}
+	log.Info("success")
 
-	cli := &Client{
-		address:  *addr,
-		user:     *user,
-		password: *password,
-		client: &http.Client{
-			Timeout:   time.Second * 5,
-			Jar:       jar,
-			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecure}},
-		},
-	}
-
-	if err := cli.authenticate(); err != nil {
-		log.Fatalf("connecting to Unifi controller: %v", err)
-	}
-	log.Infof("connected to Unifi controller at %s", cli.address)
-
-	col := newCollector(cli, networks)
+	// initialize metrics
+	col := newCollector(cli, strings.Split(*watchNets, ","))
 	prometheus.MustRegister(col)
 
-	http.Handle("/metrics", promhttp.Handler())
-
+	// expose metrics and start server
 	log.Infof("listening for connections on http://%s/metrics...", *listenAddr)
+	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(*listenAddr, nil))
-
 }
 
-func newCollector(cli *Client, nets []string) *Collector {
+func newCollector(cli *unifi.Client, nets []string) *collector {
 	stnLabels := []string{
 		"mac",
 		"hostname",
@@ -78,7 +61,7 @@ func newCollector(cli *Client, nets []string) *Collector {
 		"wired",
 		"ip",
 	}
-	return &Collector{
+	return &collector{
 		upMetric: prometheus.NewDesc(
 			"unifi_controller_up",
 			"was talking to the Unifi controller successful",
@@ -101,29 +84,29 @@ func newCollector(cli *Client, nets []string) *Collector {
 	}
 }
 
-type Collector struct {
+type collector struct {
 	upMetric          *prometheus.Desc
 	stnUptimeMetric   *prometheus.Desc
 	stnLastSeenMetric *prometheus.Desc
-	cli               *Client
+	cli               *unifi.Client
 	networks          []string
 }
 
-func (c Collector) Describe(ch chan<- *prometheus.Desc) {
+func (c collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.upMetric
 	ch <- c.stnUptimeMetric
 	ch <- c.stnLastSeenMetric
 }
 
-func (c Collector) Collect(ch chan<- prometheus.Metric) {
-	if err := c.cli.authenticate(); err != nil {
+func (c collector) Collect(ch chan<- prometheus.Metric) {
+	if err := c.cli.Authenticate(); err != nil {
 		ch <- prometheus.MustNewConstMetric(c.upMetric, prometheus.GaugeValue, 0)
 		log.Errorf("talking to unifi controller: %v", err)
 		return
 	}
 	ch <- prometheus.MustNewConstMetric(c.upMetric, prometheus.GaugeValue, 1)
 
-	stations, err := c.cli.getStations()
+	stations, err := c.cli.GetStations()
 	if err != nil {
 		log.Errorf("getting stations: %w", err)
 		return
