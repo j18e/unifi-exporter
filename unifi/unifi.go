@@ -58,8 +58,8 @@ type Station struct {
 	LastSeen     int    `json:"last_seen"`
 	Manufacturer string `json:"oui"`
 	Wired        bool   `json:"is_wired"`
-	TXBytes      int    `json:"tx_bytes"`
-	RXBytes      int    `json:"rx_bytes"`
+	TXBytes      uint64 `json:"tx_bytes"`
+	RXBytes      uint64 `json:"rx_bytes"`
 }
 
 // GetStations calls the Unifi controller's sta API endpoint and marshals the
