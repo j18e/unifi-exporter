@@ -80,7 +80,7 @@ func (c collector) Collect(ch chan<- prometheus.Metric) {
 
 	stations, err := c.cli.GetStations()
 	if err != nil {
-		log.Errorf("getting stations: %w", err)
+		log.Errorf("getting stations: %v", err)
 		return
 	}
 
