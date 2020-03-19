@@ -79,8 +79,6 @@ func getConfig() (Config, error) {
 		return conf, errors.New("required flag -unifi.user")
 	} else if *unifiPassword == "" {
 		return conf, errors.New("required flag -unifi.password")
-	} else if *influxAddr == "" {
-		return conf, errors.New("required flag -influx.address")
 	} else if *watchNets == "" {
 		return conf, errors.New("required flag -watch-networks")
 	}
